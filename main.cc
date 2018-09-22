@@ -1,4 +1,4 @@
-#include "pxdrw.hh"
+#include "framebuffer.hh"
 #include "utils.hh"
 #include <fstream>
 
@@ -81,7 +81,7 @@ int getmap(int x, int y) {
     return map[y][x];
 }
 
-void draw(framebuffer *pd) {
+void render(framebuffer *pd, const state_t &draw) {
   const int offset = 5, scale = 5;
   for (int y = 0; y < mapsz; y++)
     for (int x = 0; x < mapsz; x++)
@@ -151,7 +151,7 @@ void draw(framebuffer *pd) {
 int main() {
   framebuffer screen(800, 600);
 
-  screen.mainloop(update, draw);
+  screen.mainloop(&running, update, render);
 
   return 0;
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "state.hh"
 #include <SDL2/SDL.h>
 #include <memory>
 
@@ -11,16 +12,17 @@ class framebuffer
   std::unique_ptr<uint32_t[]> _data;
   int _width, _height;
 
+  double _get_time_in_seconds();
   void _resize();
+  void _draw() const;
 public:
   framebuffer(int width, int height);
   ~framebuffer();
   int get_width() const;
   int get_height() const;
-  void draw();
   void write(int x, int y, uint32_t color);
   void clear();
-  void mainloop(void (*update_cb)(double, uint32_t),
-      void (*draw_cb)(framebuffer*));
+  void mainloop(bool *running, void (*update_cb)(double, uint32_t),
+      void (*render_cb)(framebuffer*, const state_t&));
 };
 
