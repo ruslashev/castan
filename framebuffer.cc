@@ -74,6 +74,17 @@ void framebuffer::write(int x, int y, uint32_t color)
   _data[y * _width + x] = (color << 8) + 0xFF;
 }
 
+void framebuffer::draw_vert_line(int x, int h, uint32_t color) {
+  for (int y = 0; y < h; ++y)
+    write(x, _height / 2 - h / 2 + y, color);
+}
+
+void framebuffer::draw_square(int x, int y, int size, uint32_t color) {
+  for (int dy = 0; dy < size; dy++)
+    for (int dx = 0; dx < size; dx++)
+      write(x + dx, y + dy, color);
+}
+
 void framebuffer::clear()
 {
   std::fill(_data.begin(), _data.end(), 0);
