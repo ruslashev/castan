@@ -1,72 +1,82 @@
 #include "pxdrw.hh"
 #include "utils.hh"
+#include <memory>
 
-pixeldrawer::pixeldrawer(int wwidth, int wheight) : wwidth(wwidth),
-  wheight(wheight)
+void framebuffer::_resize()
 {
-  window = NULL;
-  renderer = NULL;
-  texture = NULL;
+  if (_window)
+    SDL_DestroyWindow(_window);
 
+  _window = SDL_CreateWindow("castan", SDL_WINDOWPOS_UNDEFINED,
+      SDL_WINDOWPOS_UNDEFINED, _width, _height, SDL_WINDOW_SHOWN);
+
+  if (_window == NULL)
+    die("Failed to create _window: %s", SDL_GetError());
+
+  if (_renderer)
+    SDL_DestroyRenderer(_renderer);
+
+  _renderer = SDL_CreateRenderer(_window, -1, SDL_RENDERER_ACCELERATED);
+
+  if (_renderer == NULL)
+    die("Failed to create _renderer: %s", SDL_GetError());
+
+  if (_texture)
+    SDL_DestroyTexture(_texture);
+
+  _texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_RGBA8888,
+      SDL_TEXTUREACCESS_STREAMING, _width, _height);
+
+  _data = std::make_unique<uint32_t[]>(_width * _height);
+}
+
+framebuffer::framebuffer(int width, int height)
+  : _window(nullptr)
+  , _renderer(nullptr)
+  , _texture(nullptr)
+  , _width(width)
+  , _height(height)
+{
   if (SDL_Init(SDL_INIT_VIDEO) < 0)
     die("Failed to initialize SDL: %s", SDL_GetError());
 
-  resize();
+  _resize();
 }
 
-void pixeldrawer::resize()
+int framebuffer::get_width() const
 {
-  if (window)
-    SDL_DestroyWindow(window);
-
-  window = SDL_CreateWindow("vfk", SDL_WINDOWPOS_UNDEFINED,
-      SDL_WINDOWPOS_UNDEFINED, wwidth, wheight, SDL_WINDOW_SHOWN);
-
-  if (window == NULL)
-    die("Failed to create Window: %s", SDL_GetError());
-
-  if (renderer)
-    SDL_DestroyRenderer(renderer);
-
-  renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-
-  if (renderer == NULL)
-    die("Failed to create Renderer: %s", SDL_GetError());
-
-  if (texture)
-    SDL_DestroyTexture(texture);
-
-  texture = SDL_CreateTexture(renderer,
-      SDL_PIXELFORMAT_RGBA8888,
-      SDL_TEXTUREACCESS_STREAMING, wwidth, wheight);
-
-  data = std::unique_ptr<uint32_t>(new uint32_t [wwidth * wheight]);
+  return _width;
 }
 
-void pixeldrawer::draw()
+int framebuffer::get_height() const
 {
-  SDL_UpdateTexture(texture, NULL, data.get(), wwidth * sizeof(uint32_t));
-  SDL_RenderClear(renderer);
-  SDL_RenderCopy(renderer, texture, NULL, NULL);
-  SDL_RenderPresent(renderer);
+  return _height;
 }
 
-void pixeldrawer::write(int x, int y, uint32_t color)
+void framebuffer::draw()
 {
-  if (x < 0 || x > wwidth || y < 0 || y > wheight)
+  SDL_UpdateTexture(_texture, NULL, _data.get(), _width * sizeof(uint32_t));
+  SDL_RenderClear(_renderer);
+  SDL_RenderCopy(_renderer, _texture, NULL, NULL);
+  SDL_RenderPresent(_renderer);
+}
+
+void framebuffer::write(int x, int y, uint32_t color)
+{
+  if (x < 0 || x > _width || y < 0 || y > _height)
     return;
-  data.get()[y * wwidth + x] = (color << 8) + 0xFF; // XXX
+  _data.get()[y * _width + x] = (color << 8) + 0xFF; // XXX
 }
 
-void pixeldrawer::clear()
+void framebuffer::clear()
 {
-  for (int y = 0; y < wheight; y++)
-    for (int x = 0; x < wwidth; x++)
+  for (int y = 0; y < _height; y++)
+    for (int x = 0; x < _width; x++)
       write(x, y, 0);
 }
 
-void pixeldrawer::mainloop(void (*update_cb)(double, uint32_t),
-    void (*draw_cb)(pixeldrawer*)) {
+void framebuffer::mainloop(void (*update_cb)(double, uint32_t),
+    void (*draw_cb)(framebuffer*)) {
   extern bool running;
   uint32_t simtime = 0;
 
@@ -86,11 +96,11 @@ void pixeldrawer::mainloop(void (*update_cb)(double, uint32_t),
   }
 }
 
-pixeldrawer::~pixeldrawer()
+framebuffer::~framebuffer()
 {
-  SDL_DestroyTexture(texture);
-  SDL_DestroyRenderer(renderer);
-  SDL_DestroyWindow(window);
+  SDL_DestroyTexture(_texture);
+  SDL_DestroyRenderer(_renderer);
+  SDL_DestroyWindow(_window);
   SDL_Quit();
 }
 

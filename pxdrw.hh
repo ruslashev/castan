@@ -3,24 +3,24 @@
 #include <SDL2/SDL.h>
 #include <memory>
 
-class pixeldrawer
+class framebuffer
 {
-  SDL_Window *window;
-  SDL_Renderer *renderer;
-  SDL_Texture *texture;
-  std::unique_ptr<uint32_t> data;
+  SDL_Window *_window;
+  SDL_Renderer *_renderer;
+  SDL_Texture *_texture;
+  std::unique_ptr<uint32_t[]> _data;
+  int _width, _height;
 
-  void resize();
+  void _resize();
 public:
-  pixeldrawer(int wwidth, int wheight);
-  ~pixeldrawer();
-
-  int wwidth, wheight;
-
+  framebuffer(int width, int height);
+  ~framebuffer();
+  int get_width() const;
+  int get_height() const;
   void draw();
   void write(int x, int y, uint32_t color);
   void clear();
   void mainloop(void (*update_cb)(double, uint32_t),
-      void (*draw_cb)(pixeldrawer*));
+      void (*draw_cb)(framebuffer*));
 };
 

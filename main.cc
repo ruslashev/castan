@@ -2,12 +2,12 @@
 #include "utils.hh"
 #include <fstream>
 
-void drawvline(pixeldrawer *pd, int x, int sz, uint32_t color) {
+void drawvline(framebuffer *pd, int x, int sz, uint32_t color) {
   for (int y = 0; y < sz; y++)
-    pd->write(x, pd->wheight / 2 - sz / 2 + y, color);
+    pd->write(x, pd->get_height() / 2 - sz / 2 + y, color);
 }
 
-void drawsq(pixeldrawer *pd, int x, int y, int sz, uint32_t color) {
+void drawsq(framebuffer *pd, int x, int y, int sz, uint32_t color) {
   for (int dy = 0; dy < sz; dy++)
     for (int dx = 0; dx < sz; dx++)
       pd->write(x + dx, y + dy, color);
@@ -81,7 +81,7 @@ int getmap(int x, int y) {
     return map[y][x];
 }
 
-void draw(pixeldrawer *pd) {
+void draw(framebuffer *pd) {
   const int offset = 5, scale = 5;
   for (int y = 0; y < mapsz; y++)
     for (int x = 0; x < mapsz; x++)
@@ -106,8 +106,8 @@ void draw(pixeldrawer *pd) {
         round(ply + i * sin(to_rads(playerang))),
         0xFF0000);
 
-  for (int x = 0; x < pd->wwidth; x++) {
-    const double screenxnorm = ((double)x / pd->wwidth) * 2.0 - 1.0;
+  for (int x = 0; x < pd->get_width(); x++) {
+    const double screenxnorm = ((double)x / pd->get_width()) * 2.0 - 1.0;
     double thisrayang = playerang + screenxnorm * fov;
     double dirx = cos(to_rads(thisrayang)), diry = sin(to_rads(thisrayang));
     int mapx = playerx / tilesize, mapy = playery / tilesize;
@@ -149,7 +149,7 @@ void draw(pixeldrawer *pd) {
 }
 
 int main() {
-  pixeldrawer screen(800, 600);
+  framebuffer screen(800, 600);
 
   screen.mainloop(update, draw);
 
