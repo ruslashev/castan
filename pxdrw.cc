@@ -8,8 +8,8 @@ pixeldrawer::pixeldrawer(int wwidth, int wheight) : wwidth(wwidth),
   renderer = NULL;
   texture = NULL;
 
-  assert(SDL_Init(SDL_INIT_VIDEO) >= 0, "Failed to initialize SDL: %s",
-      SDL_GetError());
+  if (SDL_Init(SDL_INIT_VIDEO) < 0)
+    die("Failed to initialize SDL: %s", SDL_GetError());
 
   resize();
 }
@@ -22,15 +22,16 @@ void pixeldrawer::resize()
   window = SDL_CreateWindow("vfk", SDL_WINDOWPOS_UNDEFINED,
       SDL_WINDOWPOS_UNDEFINED, wwidth, wheight, SDL_WINDOW_SHOWN);
 
-  assert(window != NULL, "Failed to create Window: %s", SDL_GetError());
+  if (window == NULL)
+    die("Failed to create Window: %s", SDL_GetError());
 
   if (renderer)
     SDL_DestroyRenderer(renderer);
 
   renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-  assert(renderer != NULL, "Failed to create Renderer: %s",
-      SDL_GetError());
+  if (renderer == NULL)
+    die("Failed to create Renderer: %s", SDL_GetError());
 
   if (texture)
     SDL_DestroyTexture(texture);

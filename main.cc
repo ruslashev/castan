@@ -1,5 +1,6 @@
-#include <fstream>
 #include "pxdrw.hh"
+#include "utils.hh"
+#include <fstream>
 
 void drawvline(pixeldrawer *pd, int x, int sz, uint32_t color) {
   for (int y = 0; y < sz; y++)
@@ -21,6 +22,7 @@ int tilecolor(int t) {
     case  4: return 0x0000FF;
     case  5: return 0xFF00FF;
     case  6: return 0x444444;
+    default: return 0xFF00FF;
   }
 }
 
