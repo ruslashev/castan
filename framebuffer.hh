@@ -9,7 +9,7 @@ class framebuffer
   SDL_Window *_window;
   SDL_Renderer *_renderer;
   SDL_Texture *_texture;
-  std::unique_ptr<uint32_t[]> _data;
+  std::vector<uint32_t> _data;
   int _width, _height;
 
   double _get_time_in_seconds();

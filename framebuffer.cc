@@ -33,12 +33,12 @@ void framebuffer::_resize()
   _texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING,
       _width, _height);
 
-  _data = std::make_unique<uint32_t[]>(_width * _height);
+  _data.resize(_width * _height, 0);
 }
 
 void framebuffer::_draw() const
 {
-  SDL_UpdateTexture(_texture, NULL, _data.get(), _width * sizeof(uint32_t));
+  SDL_UpdateTexture(_texture, NULL, _data.data(), _width * sizeof(uint32_t));
   SDL_RenderClear(_renderer);
   SDL_RenderCopy(_renderer, _texture, NULL, NULL);
   SDL_RenderPresent(_renderer);
@@ -76,9 +76,7 @@ void framebuffer::write(int x, int y, uint32_t color)
 
 void framebuffer::clear()
 {
-  for (int y = 0; y < _height; ++y)
-    for (int x = 0; x < _width; ++x)
-      write(x, y, 0);
+  std::fill(_data.begin(), _data.end(), 0);
 }
 
 void framebuffer::mainloop(bool *running, void (*update_cb)(double, uint32_t),
