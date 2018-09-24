@@ -5,13 +5,12 @@
 static int tilecolor(int t)
 {
   switch (t) {
-    case -1: return 0xFFFF00;
-    case  1: return 0xFFFFFF;
-    case  2: return 0xFF0000;
-    case  3: return 0x00FF00;
-    case  4: return 0x0000FF;
-    case  5: return 0xFF00FF;
-    case  6: return 0x444444;
+    case 1:  return 0xFFFFFF;
+    case 2:  return 0xFF0000;
+    case 3:  return 0x00FF00;
+    case 4:  return 0x0000FF;
+    case 5:  return 0xFF00FF;
+    case 6:  return 0x444444;
     default: return 0xFF00FF;
   }
 }
@@ -29,9 +28,9 @@ static const int map[mapsz][mapsz] = {
   {1,0,0,0,0,0,0,0,0,1},
   {1,1,5,2,3,4,2,1,1,1},
 };
-static double playerx = 30, playery = 40, playerang = 0;
 static const double tilesize = 10;
-static const double plyspeed = 30, plyturnspeed = 100;
+static const double player_acc = 50, player_vel_limit = 30, player_vel_damping = 0.85,
+                    player_turn_acc = 800, player_turn_vel_limit = 110, player_turn_damping = 0.8;
 static double fov = 60;
 static bool running = true;
 
@@ -50,9 +49,16 @@ static double to_rads(double degs)
   return degs * (M_PI / 180.0);
 }
 
-static void update(double dt, uint32_t t)
+static void update(state_t *state, double dt, uint32_t t)
 {
   SDL_Event event;
+
+  if (state->player.vel.magnitude_sq() > player_vel_limit * player_vel_limit) {
+    state->player.vel.normalize();
+    state->player.vel *= player_vel_limit;
+  }
+  state->player.angvel = clamp(state->player.angvel, -player_turn_vel_limit, player_turn_vel_limit);
+
   while (SDL_PollEvent(&event) != 0) {
     if (event.type == SDL_QUIT)
       running = false;
@@ -60,9 +66,12 @@ static void update(double dt, uint32_t t)
       uint8_t *keystates = (uint8_t*)SDL_GetKeyboardState(nullptr);
       int fw = keystates[SDL_SCANCODE_W] - keystates[SDL_SCANCODE_S];
       int side = keystates[SDL_SCANCODE_D] - keystates[SDL_SCANCODE_A];
-      playerx += fw * cos(to_rads(playerang)) * plyspeed * dt;
-      playery += fw * sin(to_rads(playerang)) * plyspeed * dt;
-      playerang += side * plyturnspeed * dt;
+      state->player.angacc = side * player_turn_acc;
+      state->player.angveldamping = side == 0 ? player_turn_damping : 1;
+
+      state->player.acc.x = fw * cos(to_rads(state->player.ang)) * player_acc;
+      state->player.acc.y = fw * sin(to_rads(state->player.ang)) * player_acc;
+      state->player.veldamping = fw == 0 ? player_vel_damping : 1;
     }
   }
 }
@@ -75,40 +84,41 @@ static int getmap(int x, int y)
 static void draw_minimap(framebuffer *pd, const state_t &draw)
 {
   const int offset = 5, scale = 5;
-  int plx = offset + (playerx / tilesize) * scale,
-      ply = offset + (playery / tilesize) * scale;
+  int plx = offset + (draw.player.pos.x / tilesize) * scale,
+      ply = offset + (draw.player.pos.y / tilesize) * scale;
 
   for (int y = 0; y < mapsz; ++y)
     for (int x = 0; x < mapsz; ++x)
       if (map[y][x])
         pd->draw_square(offset + x * scale, offset + y * scale, scale, tilecolor(map[y][x]));
 
-  pd->draw_square(plx - 1, ply - 1, 3, 0xAAAAAA);
-
   for (int i = 0; i < 70; i++) {
-    pd->write(round(plx + i * cos(to_rads(playerang - fov / 1.0))),
-        round(ply + i * sin(to_rads(playerang - fov / 1.0))), 0x00AA00);
-    pd->write(round(plx + i * cos(to_rads(playerang + fov / 1.0))),
-        round(ply + i * sin(to_rads(playerang + fov / 1.0))), 0x00AA00);
+    pd->write(round(plx + i * cos(to_rads(draw.player.ang - fov / 1.0))),
+        round(ply + i * sin(to_rads(draw.player.ang - fov / 1.0))), 0x00AA00);
+    pd->write(round(plx + i * cos(to_rads(draw.player.ang + fov / 1.0))),
+        round(ply + i * sin(to_rads(draw.player.ang + fov / 1.0))), 0x00AA00);
   }
 
-  for (int i = 0; i < 10; i++)
-    pd->write(round(plx + i * cos(to_rads(playerang))),
-        round(ply + i * sin(to_rads(playerang))),
+  for (int i = 0; i < 40; i++)
+    pd->write(round(plx + i * cos(to_rads(draw.player.ang))),
+        round(ply + i * sin(to_rads(draw.player.ang))),
         0xFF0000);
+
+  pd->draw_square(plx - 1, ply - 1, 3, 0xAAAAAA);
 }
 
-static void render(framebuffer *pd, const state_t &draw) {
+static void render(framebuffer *pd, const state_t &draw)
+{
   draw_minimap(pd, draw);
 
   for (int x = 0; x < pd->get_width(); x++) {
     const double screenxnorm = ((double)x / pd->get_width()) * 2.0 - 1.0;
-    double thisrayang = playerang + screenxnorm * fov;
+    double thisrayang = draw.player.ang + screenxnorm * fov;
     double dirx = cos(to_rads(thisrayang)), diry = sin(to_rads(thisrayang));
-    int mapx = playerx / tilesize, mapy = playery / tilesize;
+    int mapx = draw.player.pos.x / tilesize, mapy = draw.player.pos.y / tilesize;
     double ddx = abs(1 / dirx), ddy = abs(1 / diry);
     int stepx = sign(dirx), stepy = sign(diry);
-    double raydifx = mapx - playerx / tilesize, raydify = mapy - playery / tilesize;
+    double raydifx = mapx - draw.player.pos.x / tilesize, raydify = mapy - draw.player.pos.y / tilesize;
     double sidedx = (sign(dirx) * raydifx + sign(dirx) * 0.5 + 0.5) * ddx,
            sidedy = (sign(diry) * raydify + sign(diry) * 0.5 + 0.5) * ddy;
     bool maskx, masky;
@@ -130,9 +140,9 @@ static void render(framebuffer *pd, const state_t &draw) {
     }
     double dist;
     if (maskx)
-      dist = abs((mapx - playerx / tilesize + (1.0 - stepx) / 2.0) / dirx);
+      dist = abs((mapx - draw.player.pos.x / tilesize + (1.0 - stepx) / 2.0) / dirx);
     else
-      dist = abs((mapy - playery / tilesize + (1.0 - stepy) / 2.0) / diry);
+      dist = abs((mapy - draw.player.pos.y / tilesize + (1.0 - stepy) / 2.0) / diry);
     dist = 600 / dist;
     if (dist > 600)
       dist = 600;
@@ -143,8 +153,10 @@ static void render(framebuffer *pd, const state_t &draw) {
 
 int main() {
   framebuffer screen(800, 600);
+  state_t initial;
+  initial.player.pos = vec2(30, 40);
 
-  screen.mainloop(&running, update, render);
+  screen.mainloop(&running, initial, update, render);
 
   return 0;
 }

@@ -24,7 +24,8 @@ public:
   void draw_vert_line(int x, int h, uint32_t color);
   void draw_square(int x, int y, int size, uint32_t color);
   void clear();
-  void mainloop(bool *running, void (*update_cb)(double, uint32_t),
+  void mainloop(bool *running, const state_t &initial,
+      void (*update_cb)(state_t*, double, uint32_t),
       void (*render_cb)(framebuffer*, const state_t&));
 };
 

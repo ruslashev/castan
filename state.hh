@@ -14,13 +14,26 @@ struct vec2
   vec2 operator*(double r);
   vec2& operator+=(const vec2 &v);
   vec2& operator-=(const vec2 &v);
+  vec2& operator*=(double);
+  double magnitude_sq();
+  void normalize();
 };
+
+double clamp(double x, double low, double high);
 
 struct entity_t
 {
   vec2 pos;
   vec2 vel;
   vec2 acc;
+  double ang;
+  double angvel;
+  double angacc;
+
+  double veldamping;
+  double angveldamping;
+  entity_t();
+  void integrate(double t, double dt);
 };
 
 class state_t

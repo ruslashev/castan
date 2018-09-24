@@ -90,13 +90,14 @@ void framebuffer::clear()
   std::fill(_data.begin(), _data.end(), 0);
 }
 
-void framebuffer::mainloop(bool *running, void (*update_cb)(double, uint32_t),
-    void (*render_cb)(framebuffer*, const state_t&))
+void framebuffer::mainloop(bool *running, const state_t &initial,
+      void (*update_cb)(state_t*, double, uint32_t),
+      void (*render_cb)(framebuffer*, const state_t&))
 {
   const int ticks_per_second = 60, max_update_ticks = 15;
   double t = 0, dt = 1. / ticks_per_second, current_time = _get_time_in_seconds(), accumulator = 0;
 
-  state_t previous, current;
+  state_t previous, current = initial;
 
   uint64_t frame = 0;
 
@@ -108,7 +109,7 @@ void framebuffer::mainloop(bool *running, void (*update_cb)(double, uint32_t),
 
     while (accumulator >= dt) {
       previous = current;
-      update_cb(dt, t);
+      update_cb(&current, dt, t);
       current.integrate(t, dt);
       t += dt;
       accumulator -= dt;
