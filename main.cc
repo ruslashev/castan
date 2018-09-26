@@ -3,19 +3,16 @@
 #include <fstream>
 #include <cmath>
 
-static int tilecolor(int t)
-{
-  switch (t) {
-    case 1:  return 0xFFFFFF;
-    case 2:  return 0xFF0000;
-    case 3:  return 0x00FF00;
-    case 4:  return 0x0000FF;
-    case 5:  return 0xFF00FF;
-    case 6:  return 0x444444;
-    default: return 0xFF00FF;
-  }
-}
-
+static const int palette_size = 6;
+static const uint32_t palette[palette_size + 1][2] = {
+  { 0xFF00FF, 0xFF00FF },
+  { 0xFFFFFF, 0xDDDDDD },
+  { 0xFF0000, 0xDD0000 },
+  { 0x00FF00, 0x00DD00 },
+  { 0x0000FF, 0x0000DD },
+  { 0xFF00FF, 0xDD00DD },
+  { 0x444444, 0x333333 }
+};
 static const int mapsz = 10;
 static const int map[mapsz][mapsz] = {
   {1,1,1,2,3,4,2,1,1,1},
@@ -34,6 +31,11 @@ static const double player_acc = 50, player_vel_limit = 30, player_vel_damping =
                     player_turn_acc = 600, player_turn_vel_limit = 120, player_turn_damping = 0.8;
 static double fov = 60;
 static bool running = true;
+
+static int tilecolor(int t, bool shaded = false)
+{
+  return (t >= 1 && t <= palette_size) ? palette[t][(int)shaded] : palette[0][0];
+}
 
 static int sign(double x)
 {
@@ -133,7 +135,7 @@ static void render(framebuffer *pd, const state_t &draw)
            sidedy = (stepy * raydify + stepy * 0.5 + 0.5) * ddy,
            dist,
            height;
-    bool maskx = false, masky = false;
+    bool maskx = false;
 
     for (int i = 0; i < 1e3; i++) {
       if (getmap(mapx, mapy) != 0)
@@ -142,12 +144,10 @@ static void render(framebuffer *pd, const state_t &draw)
         sidedx += ddx;
         mapx += stepx;
         maskx = true;
-        masky = false;
       } else {
         sidedy += ddy;
         mapy += stepy;
         maskx = false;
-        masky = true;
       }
     }
 
@@ -156,11 +156,11 @@ static void render(framebuffer *pd, const state_t &draw)
     else
       dist = std::abs((mapy - player_tile_y + (1.0 - stepy) / 2.0) / diry);
 
-    height = 600 / dist;
-    if (height > 600)
-      height = 600;
+    height = pd->get_height() / dist;
+    if (height > pd->get_height())
+      height = pd->get_height();
 
-    uint32_t color = tilecolor(getmap(mapx, mapy)) * (maskx || masky ? 0.9 : 1.0);
+    uint32_t color = tilecolor(getmap(mapx, mapy), maskx);
     pd->draw_vert_line(x, height, color);
   }
 
