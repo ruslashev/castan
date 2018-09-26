@@ -14,12 +14,10 @@ struct vec2
   vec2 operator*(double r);
   vec2& operator+=(const vec2 &v);
   vec2& operator-=(const vec2 &v);
-  vec2& operator*=(double);
+  vec2& operator*=(double r);
   double magnitude_sq();
   void normalize();
 };
-
-double clamp(double x, double low, double high);
 
 struct entity_t
 {
@@ -46,4 +44,6 @@ public:
 };
 
 state_t state_lerp(const state_t &a, const state_t &b, double t);
+
+double clamp(double x, double low, double high);
 

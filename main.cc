@@ -1,6 +1,7 @@
 #include "framebuffer.hh"
 #include "utils.hh"
 #include <fstream>
+#include <cmath>
 
 static int tilecolor(int t)
 {
@@ -36,7 +37,7 @@ static bool running = true;
 
 static int sign(double x)
 {
-  if (abs(x) < 1e-5)
+  if (std::abs(x) < 1e-5)
     return 0;
   if (x < 0)
     return -1;
@@ -116,7 +117,7 @@ static void render(framebuffer *pd, const state_t &draw)
     double thisrayang = draw.player.ang + screenxnorm * fov;
     double dirx = cos(to_rads(thisrayang)), diry = sin(to_rads(thisrayang));
     int mapx = draw.player.pos.x / tilesize, mapy = draw.player.pos.y / tilesize;
-    double ddx = abs(1 / dirx), ddy = abs(1 / diry);
+    double ddx = std::abs(1. / dirx), ddy = std::abs(1. / diry);
     int stepx = sign(dirx), stepy = sign(diry);
     double raydifx = mapx - draw.player.pos.x / tilesize, raydify = mapy - draw.player.pos.y / tilesize;
     double sidedx = (sign(dirx) * raydifx + sign(dirx) * 0.5 + 0.5) * ddx,
@@ -140,9 +141,9 @@ static void render(framebuffer *pd, const state_t &draw)
     }
     double dist;
     if (maskx)
-      dist = abs((mapx - draw.player.pos.x / tilesize + (1.0 - stepx) / 2.0) / dirx);
+      dist = std::abs((mapx - draw.player.pos.x / tilesize + (1.0 - stepx) / 2.0) / dirx);
     else
-      dist = abs((mapy - draw.player.pos.y / tilesize + (1.0 - stepy) / 2.0) / diry);
+      dist = std::abs((mapy - draw.player.pos.y / tilesize + (1.0 - stepy) / 2.0) / diry);
     dist = 600 / dist;
     if (dist > 600)
       dist = 600;

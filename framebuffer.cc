@@ -97,7 +97,7 @@ void framebuffer::mainloop(bool *running, const state_t &initial,
   const int ticks_per_second = 60, max_update_ticks = 15;
   double t = 0, dt = 1. / ticks_per_second, current_time = _get_time_in_seconds(), accumulator = 0;
 
-  state_t previous, current = initial;
+  state_t previous = initial, current = initial;
 
   uint64_t frame = 0;
 
@@ -130,7 +130,7 @@ void framebuffer::mainloop(bool *running, const state_t &initial,
     double draw_end_s = _get_time_in_seconds();
 
     std::chrono::duration<double, std::milli> draw_duration_w = draw_end_w - draw_begin_w;
-    float draw_duration_c = ((float)(draw_end_c - draw_begin_c) / CLOCKS_PER_SEC) * 1000.f;
+    double draw_duration_c = ((float)(draw_end_c - draw_begin_c) / CLOCKS_PER_SEC) * 1000.f;
     double draw_duration_s = (draw_end_s - draw_begin_s) * 1000.;
 
     _draw();

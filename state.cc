@@ -67,7 +67,7 @@ double clamp(double x, double low, double high)
   return std::min(std::max(x, low), high);
 }
 
-entity_t::entity_t() : ang(0), angvel(0), angacc(0)
+entity_t::entity_t() : ang(0), angvel(0), angacc(0), veldamping(0), angveldamping(0)
 {
 }
 
