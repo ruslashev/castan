@@ -88,6 +88,8 @@ static void draw_minimap(framebuffer *pd, const state_t &draw)
   int plx = offset + (draw.player.pos.x / tilesize) * scale,
       ply = offset + (draw.player.pos.y / tilesize) * scale;
 
+  pd->draw_square(offset, offset, mapsz * scale, 0x000000);
+
   for (int y = 0; y < mapsz; ++y)
     for (int x = 0; x < mapsz; ++x)
       if (map[y][x])
@@ -110,8 +112,6 @@ static void draw_minimap(framebuffer *pd, const state_t &draw)
 
 static void render(framebuffer *pd, const state_t &draw)
 {
-  draw_minimap(pd, draw);
-
   for (int x = 0; x < pd->get_width(); x++) {
     const double screenxnorm = ((double)x / pd->get_width()) * 2.0 - 1.0;
     double thisrayang = draw.player.ang + screenxnorm * fov;
@@ -150,6 +150,8 @@ static void render(framebuffer *pd, const state_t &draw)
     uint32_t color = tilecolor(getmap(mapx, mapy)) * (maskx ? 0.9 : 1.0);
     pd->draw_vert_line(x, dist, color);
   }
+
+  draw_minimap(pd, draw);
 }
 
 int main() {
