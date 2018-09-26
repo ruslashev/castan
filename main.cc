@@ -31,7 +31,7 @@ static const int map[mapsz][mapsz] = {
 };
 static const double tilesize = 10;
 static const double player_acc = 50, player_vel_limit = 30, player_vel_damping = 0.85,
-                    player_turn_acc = 800, player_turn_vel_limit = 110, player_turn_damping = 0.8;
+                    player_turn_acc = 600, player_turn_vel_limit = 120, player_turn_damping = 0.8;
 static double fov = 60;
 static bool running = true;
 
@@ -113,16 +113,27 @@ static void draw_minimap(framebuffer *pd, const state_t &draw)
 static void render(framebuffer *pd, const state_t &draw)
 {
   for (int x = 0; x < pd->get_width(); x++) {
-    const double screenxnorm = ((double)x / pd->get_width()) * 2.0 - 1.0;
-    double thisrayang = draw.player.ang + screenxnorm * fov;
-    double dirx = cos(to_rads(thisrayang)), diry = sin(to_rads(thisrayang));
-    int mapx = draw.player.pos.x / tilesize, mapy = draw.player.pos.y / tilesize;
-    double ddx = std::abs(1. / dirx), ddy = std::abs(1. / diry);
-    int stepx = sign(dirx), stepy = sign(diry);
-    double raydifx = mapx - draw.player.pos.x / tilesize, raydify = mapy - draw.player.pos.y / tilesize;
-    double sidedx = (sign(dirx) * raydifx + sign(dirx) * 0.5 + 0.5) * ddx,
-           sidedy = (sign(diry) * raydify + sign(diry) * 0.5 + 0.5) * ddy;
-    bool maskx, masky;
+    const double screenx = (double)x / pd->get_width(),
+          screenxnorm = screenx * 2.0 - 1.0,
+          rayang = draw.player.ang + screenxnorm * fov,
+          rayangrad = to_rads(rayang),
+          dirx = std::cos(rayangrad),
+          diry = std::sin(rayangrad),
+          ddx = std::abs(1. / dirx),
+          ddy = std::abs(1. / diry),
+          player_tile_x = draw.player.pos.x / tilesize,
+          player_tile_y = draw.player.pos.y / tilesize,
+          raydifx = std::floor(player_tile_x) - player_tile_x,
+          raydify = std::floor(player_tile_y) - player_tile_y,
+          stepx = sign(dirx),
+          stepy = sign(diry);
+    int mapx = player_tile_x,
+        mapy = player_tile_y;
+    double sidedx = (stepx * raydifx + stepx * 0.5 + 0.5) * ddx,
+           sidedy = (stepy * raydify + stepy * 0.5 + 0.5) * ddy,
+           dist,
+           height;
+    bool maskx = false, masky = false;
 
     for (int i = 0; i < 1e3; i++) {
       if (getmap(mapx, mapy) != 0)
@@ -139,16 +150,18 @@ static void render(framebuffer *pd, const state_t &draw)
         masky = true;
       }
     }
-    double dist;
+
     if (maskx)
-      dist = std::abs((mapx - draw.player.pos.x / tilesize + (1.0 - stepx) / 2.0) / dirx);
+      dist = std::abs((mapx - player_tile_x + (1.0 - stepx) / 2.0) / dirx);
     else
-      dist = std::abs((mapy - draw.player.pos.y / tilesize + (1.0 - stepy) / 2.0) / diry);
-    dist = 600 / dist;
-    if (dist > 600)
-      dist = 600;
-    uint32_t color = tilecolor(getmap(mapx, mapy)) * (maskx ? 0.9 : 1.0);
-    pd->draw_vert_line(x, dist, color);
+      dist = std::abs((mapy - player_tile_y + (1.0 - stepy) / 2.0) / diry);
+
+    height = 600 / dist;
+    if (height > 600)
+      height = 600;
+
+    uint32_t color = tilecolor(getmap(mapx, mapy)) * (maskx || masky ? 0.9 : 1.0);
+    pd->draw_vert_line(x, height, color);
   }
 
   draw_minimap(pd, draw);
