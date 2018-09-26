@@ -29,7 +29,7 @@ static const int map[mapsz][mapsz] = {
 static const double tilesize = 10;
 static const double player_acc = 50, player_vel_limit = 30, player_vel_damping = 0.85,
                     player_turn_acc = 600, player_turn_vel_limit = 120, player_turn_damping = 0.8;
-static double fov = 60;
+static double fov = 120;
 static bool running = true;
 
 static int tilecolor(int t, bool shaded = false)
@@ -86,9 +86,11 @@ static int getmap(int x, int y)
 
 static void draw_minimap(framebuffer *pd, const state_t &draw)
 {
-  const int offset = 5, scale = 5;
-  int plx = offset + (draw.player.pos.x / tilesize) * scale,
-      ply = offset + (draw.player.pos.y / tilesize) * scale;
+  const int offset = 5, scale = 5,
+            plx = std::round(offset + (draw.player.pos.x / tilesize) * scale),
+            ply = std::round(offset + (draw.player.pos.y / tilesize) * scale);
+  const double plyangrads = to_rads(draw.player.ang),
+               fovrads = to_rads(fov / 2.);
 
   pd->draw_square(offset, offset, mapsz * scale, 0x000000);
 
@@ -98,16 +100,15 @@ static void draw_minimap(framebuffer *pd, const state_t &draw)
         pd->draw_square(offset + x * scale, offset + y * scale, scale, tilecolor(map[y][x]));
 
   for (int i = 0; i < 70; i++) {
-    pd->write(round(plx + i * cos(to_rads(draw.player.ang - fov / 1.0))),
-        round(ply + i * sin(to_rads(draw.player.ang - fov / 1.0))), 0x00AA00);
-    pd->write(round(plx + i * cos(to_rads(draw.player.ang + fov / 1.0))),
-        round(ply + i * sin(to_rads(draw.player.ang + fov / 1.0))), 0x00AA00);
+    pd->write(round(plx + i * cos(plyangrads - fovrads)),
+              round(ply + i * sin(plyangrads - fovrads)), 0x00AA00);
+    pd->write(round(plx + i * cos(plyangrads + fovrads)),
+              round(ply + i * sin(plyangrads + fovrads)), 0x00AA00);
   }
 
   for (int i = 0; i < 40; i++)
-    pd->write(round(plx + i * cos(to_rads(draw.player.ang))),
-        round(ply + i * sin(to_rads(draw.player.ang))),
-        0xFF0000);
+    pd->write(round(plx + i * cos(plyangrads)),
+              round(ply + i * sin(plyangrads)), 0xFF0000);
 
   pd->draw_square(plx - 1, ply - 1, 3, 0xAAAAAA);
 }
@@ -117,7 +118,7 @@ static void render(framebuffer *pd, const state_t &draw)
   for (int x = 0; x < pd->get_width(); x++) {
     const double screenx = (double)x / pd->get_width(),
           screenxnorm = screenx * 2.0 - 1.0,
-          rayang = draw.player.ang + screenxnorm * fov,
+          rayang = draw.player.ang + screenxnorm * (fov / 2.),
           rayangrad = to_rads(rayang),
           dirx = std::cos(rayangrad),
           diry = std::sin(rayangrad),
