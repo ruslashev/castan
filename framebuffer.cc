@@ -97,7 +97,7 @@ void framebuffer::mainloop(bool *running, const state_t &initial,
   const int ticks_per_second = 60, max_update_ticks = 15;
   double t = 0, dt = 1. / ticks_per_second, current_time = _get_time_in_seconds(), accumulator = 0;
 
-  state_t previous = initial, current = initial;
+  state_t previous = initial, current = initial, draw;
 
   uint64_t frame = 0;
 
@@ -117,7 +117,7 @@ void framebuffer::mainloop(bool *running, const state_t &initial,
 
     clear();
 
-    state_t draw = state_lerp(previous, current, accumulator / dt);
+    state_lerp(&draw, previous, current, accumulator / dt);
 
     auto draw_begin_w = std::chrono::high_resolution_clock::now();
     std::clock_t draw_begin_c = std::clock();

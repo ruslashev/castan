@@ -43,7 +43,7 @@ public:
   void integrate(double t, double dt);
 };
 
-state_t state_lerp(const state_t &a, const state_t &b, double t);
+void state_lerp(state_t *out, const state_t &a, const state_t &b, double t);
 
 double clamp(double x, double low, double high);
 

@@ -104,13 +104,11 @@ static vec2 lerp(const vec2 &a, const vec2 &b, double t)
   return vec2(lerp(a.x, b.x, t), lerp(a.y, b.y, t));
 }
 
-state_t state_lerp(const state_t &a, const state_t &b, double t)
+void state_lerp(state_t *out, const state_t &a, const state_t &b, double t)
 {
   // TODO: not all entities are interpolated
   // TODO: not all entity's attributes are interpolated
-  state_t new_state;
-  new_state.player.pos = lerp(a.player.pos, b.player.pos, t);
-  new_state.player.ang = lerp(a.player.ang, b.player.ang, t);
-  return new_state;
+  out->player.pos = lerp(a.player.pos, b.player.pos, t);
+  out->player.ang = lerp(a.player.ang, b.player.ang, t);
 }
 
