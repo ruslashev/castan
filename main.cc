@@ -13,22 +13,30 @@ static const uint32_t palette[palette_size + 1][2] = {
   { 0xFF00FF, 0xDD00DD },
   { 0x444444, 0x333333 }
 };
-static const int mapsz = 10;
+static const int mapsz = 15;
 static const int map[mapsz][mapsz] = {
-  {1,1,1,2,3,4,2,1,1,1},
-  {1,0,0,0,0,0,0,0,0,1},
-  {1,0,0,0,0,0,0,0,0,5},
-  {1,0,0,0,0,0,0,0,0,5},
-  {1,0,0,0,0,0,0,0,0,6},
-  {1,0,0,0,0,0,0,0,0,5},
-  {1,0,0,0,0,0,0,0,0,5},
-  {1,0,0,0,0,0,0,0,0,1},
-  {1,0,0,0,0,0,0,0,0,1},
-  {1,1,5,2,3,4,2,1,1,1},
+  {1,1,1,2,3,4,2,1,1,1,1,1,1,1,1},
+  {1,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+  {1,0,0,0,0,0,0,0,0,0,0,0,0,0,5},
+  {1,0,0,0,0,2,0,3,0,0,1,1,1,0,5},
+  {1,0,0,0,0,0,0,0,0,0,1,0,0,0,6},
+  {1,0,0,0,0,1,0,0,0,0,1,0,0,0,5},
+  {1,0,0,0,0,0,0,5,1,0,1,0,0,0,5},
+  {1,0,0,0,0,0,0,0,1,2,3,0,0,0,1},
+  {1,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+  {1,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+  {1,0,1,0,2,0,3,0,4,0,5,0,6,0,1},
+  {1,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+  {1,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+  {1,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+  {1,1,5,2,3,4,2,1,1,1,1,1,1,1,1},
 };
 static const double tilesize = 10;
 static const double player_acc = 50, player_vel_limit = 30, player_vel_damping = 0.85,
                     player_turn_acc = 600, player_turn_vel_limit = 120, player_turn_damping = 0.8;
+static const double player_initial_x = 1 * tilesize + tilesize * 0.5,
+                    player_initial_y = 1 * tilesize + tilesize * 0.5,
+                    player_initial_angle = 45;
 static double fov = 120;
 static bool running = true;
 
@@ -171,7 +179,8 @@ static void render(framebuffer *pd, const state_t &draw)
 int main() {
   framebuffer screen(800, 600);
   state_t initial;
-  initial.player.pos = vec2(30, 40);
+  initial.player.pos = vec2(player_initial_x, player_initial_y);
+  initial.player.ang = player_initial_angle;
 
   screen.mainloop(&running, initial, update, render);
 
