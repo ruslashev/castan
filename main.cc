@@ -32,8 +32,8 @@ static const int map[mapsz][mapsz] = {
   {1,1,5,2,3,4,2,1,1,1,1,1,1,1,1},
 };
 static const double tilesize = 10;
-static const double player_acc = 50, player_vel_limit = 30, player_vel_damping = 0.85,
-                    player_turn_acc = 600, player_turn_vel_limit = 120, player_turn_damping = 0.8;
+static const double player_acc = 80, player_vel_limit = 25, player_vel_damping = 0.85,
+                    player_turn_acc = 600, player_turn_vel_limit = 125, player_turn_damping = 0.8;
 static const double player_initial_x = 1 * tilesize + tilesize * 0.5,
                     player_initial_y = 1 * tilesize + tilesize * 0.5,
                     player_initial_angle = 45;
@@ -74,15 +74,24 @@ static void update(state_t *state, double dt, uint32_t t)
     if (event.type == SDL_QUIT)
       running = false;
     else if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
-      uint8_t *keystates = (uint8_t*)SDL_GetKeyboardState(nullptr);
+      const uint8_t *keystates = SDL_GetKeyboardState(nullptr);
+      const double plyangrads = to_rads(state->player.ang);
       int fw = keystates[SDL_SCANCODE_W] - keystates[SDL_SCANCODE_S];
-      int side = keystates[SDL_SCANCODE_D] - keystates[SDL_SCANCODE_A];
+      int strafe = keystates[SDL_SCANCODE_D] - keystates[SDL_SCANCODE_A];
+      int side = keystates[SDL_SCANCODE_L] - keystates[SDL_SCANCODE_H];
+      double fw_factor = fw, strafe_factor = strafe;
+      if (fw != 0 && strafe != 0) {
+          fw_factor *= M_SQRT2;
+          strafe_factor *= M_SQRT2;
+      }
+
       state->player.angacc = side * player_turn_acc;
       state->player.angveldamping = side == 0 ? player_turn_damping : 1;
 
-      state->player.acc.x = fw * cos(to_rads(state->player.ang)) * player_acc;
-      state->player.acc.y = fw * sin(to_rads(state->player.ang)) * player_acc;
-      state->player.veldamping = fw == 0 ? player_vel_damping : 1;
+      state->player.acc.x = (fw_factor * cos(plyangrads) + strafe_factor * cos(plyangrads + M_PI_2));
+      state->player.acc.y = (fw_factor * sin(plyangrads) + strafe_factor * sin(plyangrads + M_PI_2));
+      state->player.acc *= player_acc;
+      state->player.veldamping = (fw || strafe) == 0 ? player_vel_damping : 1;
     }
   }
 }
