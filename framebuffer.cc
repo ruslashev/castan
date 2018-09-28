@@ -69,7 +69,7 @@ int framebuffer::get_height() const
 
 void framebuffer::write(int x, int y, uint32_t color)
 {
-  if (x < 0 || x > _width || y < 0 || y > _height)
+  if (x < 0 || x >= _width || y < 0 || y >= _height)
     return;
   _data[y * _width + x] = (color << 8) + 0xFF;
 }
