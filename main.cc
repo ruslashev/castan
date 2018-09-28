@@ -130,10 +130,10 @@ static void draw_minimap(framebuffer *pd, const state_t &draw)
   pd->draw_square(plx - 1, ply - 1, 3, 0xAAAAAA);
 }
 
-static void render(framebuffer *pd, const state_t &draw)
+static void raycast(framebuffer *pd, const state_t &draw, int viewport_width, int draw_start)
 {
-  for (int x = 0; x < pd->get_width(); x++) {
-    const double screenx = (double)x / pd->get_width(),
+  for (int x = 0; x < viewport_width; ++x) {
+    const double screenx = (double)x / viewport_width,
           screenxnorm = screenx * 2.0 - 1.0,
           rayang = draw.player.ang + screenxnorm * (fov / 2.),
           rayangrad = to_rads(rayang),
@@ -170,23 +170,42 @@ static void render(framebuffer *pd, const state_t &draw)
     }
 
     if (maskx)
-      dist = std::abs((mapx - player_tile_x + (1.0 - stepx) / 2.0) / dirx);
+      dist = (mapx - player_tile_x + (1.0 - stepx) / 2.0) / dirx;
     else
-      dist = std::abs((mapy - player_tile_y + (1.0 - stepy) / 2.0) / diry);
+      dist = (mapy - player_tile_y + (1.0 - stepy) / 2.0) / diry;
+
+    dist = std::abs(dist);
 
     height = pd->get_height() / dist;
     if (height > pd->get_height())
       height = pd->get_height();
 
     uint32_t color = tilecolor(getmap(mapx, mapy), maskx);
-    pd->draw_vert_line(x, height, color);
+    pd->draw_vert_line(draw_start + x, height, color);
+  }
+}
+
+static void render(framebuffer *pd, const state_t &draw)
+{
+  for (int eye = 0; eye <= 1; ++eye) {
+    const int gutter = 30,
+              viewport_width = pd->get_width() / 2 - gutter * 2,
+              draw_start = (viewport_width + gutter * 2) * eye + gutter;
+    const double eye_dist = 2.5,
+                 pristine_ang = to_rads(draw.player.ang);
+    state_t eye_state = draw;
+    eye_state.player.pos.x += (eye_dist / 2.) * std::cos(pristine_ang + M_PI_2 + M_PI * eye);
+    eye_state.player.pos.y += (eye_dist / 2.) * std::sin(pristine_ang + M_PI_2 + M_PI * eye);
+    pd->draw_square(draw_start - 1, 0, viewport_width + 2, 0xFFFFFFF);
+    pd->draw_square(draw_start, 0, viewport_width, 0x0000000);
+    raycast(pd, eye_state, viewport_width, draw_start);
   }
 
   draw_minimap(pd, draw);
 }
 
 int main() {
-  framebuffer screen(800, 600);
+  framebuffer screen(1600, 600);
   state_t initial;
   initial.player.pos = vec2(player_initial_x, player_initial_y);
   initial.player.ang = player_initial_angle;
